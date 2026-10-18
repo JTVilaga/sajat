@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#002b5c">
+    <meta name="description" content="Kiadás-nyilvántartás, naptár, napló és előjegyzés">
+    <title>KIADOK</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="ikon/ikon-192.png">
+    <link rel="apple-touch-icon" href="ikon/apple-touch-icon.png">
+    <link rel="stylesheet" href="css/app.css">
+
+    <!-- Sorrend számít: util → store → segédmodulok → nézetek → app -->
+    <script src="js/util.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/naplo-adat.js"></script>
+    <script src="js/xlsx-io.js"></script>
+    <script src="js/ics.js"></script>
+    <script src="js/nezet-naptar.js"></script>
+    <script src="js/nezet-kiadasok.js"></script>
+    <script src="js/nezet-naplo.js"></script>
+    <script src="js/nezet-egyeb.js"></script>
+    <script src="js/nezet-szef.js"></script>
+    <script src="js/nezet-adatok.js"></script>
+    <script src="js/app.js"></script>
+</head>
+
+<body>
+    <!-- FEJLÉC -->
+    <header id="fejlec">
+        <div class="fejlec-bal">
+            <img src="ikon/ikon-192.png" alt="" class="fejlec-ikon">
+            <h1 id="nezet-cim">KIADOK</h1>
+        </div>
+        <div class="fejlec-jobb">
+            <span id="mentes-allapot" class="mentes-allapot" title="Mentési állapot"></span>
+            <button id="btn-telepit" class="btn btn-kicsi btn-vilagos hidden">Telepítés</button>
+        </div>
+    </header>
+
+    <div id="fajlmentes-sav" class="figyelmeztetes-sav hidden">
+        <span>Az automatikus fájlmentéshez újra engedély kell.</span>
+        <button id="btn-fajlmentes-folytat" class="btn btn-kicsi">Folytatás</button>
+    </div>
+
+    <div id="keret">
+        <!-- OLDALSÓ / ALSÓ NAVIGÁCIÓ -->
+        <nav id="nav">
+            <a href="#naptar" data-nezet="naptar"><span class="nav-ikon">📅</span><span>Naptár</span></a>
+            <a href="#kiadasok" data-nezet="kiadasok"><span class="nav-ikon">💰</span><span>Kiadások</span></a>
+            <a href="#naplo" data-nezet="naplo"><span class="nav-ikon">📖</span><span>Napló</span></a>
+            <a href="#merok" data-nezet="merok" class="csak-szeles"><span class="nav-ikon">⚡</span><span>Mérőórák</span></a>
+            <a href="#auto" data-nezet="auto" class="csak-szeles"><span class="nav-ikon">🚗</span><span>Autó</span></a>
+            <a href="#restancia" data-nezet="restancia" class="csak-szeles"><span class="nav-ikon">📝</span><span>Restancia</span></a>
+            <a href="#szef" data-nezet="szef" class="csak-szeles"><span class="nav-ikon">🔒</span><span>Széf</span></a>
+            <a href="#sugo" data-nezet="sugo" class="csak-szeles"><span class="nav-ikon">❔</span><span>Súgó</span></a>
+            <a href="#adatok" data-nezet="adatok" class="csak-szeles"><span class="nav-ikon">💾</span><span>Adatok</span></a>
+            <a href="#tobb" data-nezet="tobb" class="csak-keskeny"><span class="nav-ikon">☰</span><span>Több</span></a>
+        </nav>
+
+        <!-- AKTUÁLIS NÉZET -->
+        <main id="nezet" tabindex="-1"></main>
+    </div>
+
+    <!-- FELUGRÓ ABLAK (modal) -->
+    <div id="modal-hatter" class="hidden">
+        <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-cim">
+            <div class="modal-fej">
+                <h2 id="modal-cim"></h2>
+                <button class="modal-x" aria-label="Bezárás">✕</button>
+            </div>
+            <div id="modal-tartalom"></div>
+        </div>
+    </div>
+
+    <!-- Rövid értesítés (toast) -->
+    <div id="toast" class="hidden"></div>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+                navigator.serviceWorker.register("sw.js");
+            });
+        }
+    </script>
+</body>
+</html>
