@@ -8,7 +8,7 @@
 const S = {
     adat: null,
     figyelok: [],
-    fajlHandle: null,       // automatikus mentési fájl (csak asztali Chrome/Edge)
+    mappa: null,            // automatikus mentési mappa (csak asztali Chrome/Edge)
     fajlEngedely: false,
     szefKulcs: null,        // feloldott széf kulcsa (csak memóriában)
     szefSzoveg: null        // feloldott széf tartalma (csak memóriában)
@@ -75,9 +75,10 @@ S.betolt = function () {
     return S.dbGet("adat").then(function (a) {
         S.adat = a || null;
         if (S.adat) S.normalizal(S.adat);
-        return S.dbGet("fajlHandle").catch(function () { return null; });
+        S.dbDel("fajlHandle");   // a régi (1.0-s) egyfájlos beállítás már nem használt
+        return S.dbGet("mappaHandle").catch(function () { return null; });
     }).then(function (h) {
-        S.fajlHandle = h || null;
+        S.mappa = h || null;
         // Tartós tárolás kérése, hogy a böngésző ne törölje az adatokat
         if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
         return S.adat;
@@ -143,7 +144,7 @@ S.allapot = function (a) {
     const el = document.getElementById("mentes-allapot");
     if (!el) return;
     const szoveg = { mentes: "Mentés…", mentve: "✓ Mentve", hiba: "⚠ Mentési hiba" }[a] || "";
-    el.textContent = szoveg + (S.fajlHandle && S.fajlEngedely && a === "mentve" ? " + fájl" : "");
+    el.textContent = szoveg + (S.mappa && S.fajlEngedely && a === "mentve" ? " + mappa" : "");
     el.className = "mentes-allapot " + a;
 };
 
@@ -159,64 +160,84 @@ S.jsonEllenoriz = function (obj) {
     return S.normalizal(obj);
 };
 
-/* ---------- Automatikus mentés fájlba (File System Access API) ---------- */
-S.fajlApiVan = function () { return "showSaveFilePicker" in window; };
+/* ---------- Automatikus mentés egy MAPPÁBA (File System Access API) ----------
+   Windowson (Chrome/Edge) egy mappát választasz, pl. a Google Drive for desktop
+   meghajtóján (G:\Saját meghajtó\KIADOK). Az app:
+   - minden módosítás után kiírja a mappába a kiadok-adatok.json fájlt,
+   - indításkor és visszatéréskor megnézi, van-e a mappában ÚJABB mentés
+     (pl. a telefonról megosztott kiadok-adatok_ÉÉÉÉ-HH-NN.txt), és felajánlja. */
+S.MENTES_NEV = "kiadok-adatok.json";
+S.MENTES_MINTA = /^kiadok-adatok.*\.(json|txt)$/i;   // ezeket a fájlokat nézi meg a mappában
 
-S.fajlBeallit = async function () {
-    const h = await window.showSaveFilePicker({
-        suggestedName: "kiadok-adatok.json",
-        types: [{ description: "KIADOK mentés", accept: { "application/json": [".json"] } }]
-    });
-    S.fajlHandle = h; S.fajlEngedely = true;
-    await S.dbSet("fajlHandle", h);
-    await S._fajlbaIrMost();
+S.mappaApiVan = function () { return "showDirectoryPicker" in window; };
+
+S.mappaBeallit = async function () {
+    const h = await window.showDirectoryPicker({ id: "kiadok-mentes", mode: "readwrite" });
+    S.mappa = h; S.fajlEngedely = true;
+    await S.dbSet("mappaHandle", h);
     return h;
 };
 
-S.fajlLeallit = async function () {
-    S.fajlHandle = null; S.fajlEngedely = false;
-    await S.dbDel("fajlHandle");
+S.mappaLeallit = async function () {
+    S.mappa = null; S.fajlEngedely = false;
+    await S.dbDel("mappaHandle");
 };
 
 /* Indításkor: megvan-e még az engedély? Ha nem, kattintás kell hozzá. */
 S.fajlEngedelyEllenoriz = async function () {
-    if (!S.fajlHandle || !S.fajlHandle.queryPermission) return false;
+    if (!S.mappa || !S.mappa.queryPermission) return false;
     try {
-        const p = await S.fajlHandle.queryPermission({ mode: "readwrite" });
+        const p = await S.mappa.queryPermission({ mode: "readwrite" });
         S.fajlEngedely = p === "granted";
     } catch (e) { S.fajlEngedely = false; }
     return S.fajlEngedely;
 };
 S.fajlEngedelyKer = async function () {
-    if (!S.fajlHandle) return false;
-    const p = await S.fajlHandle.requestPermission({ mode: "readwrite" });
+    if (!S.mappa) return false;
+    const p = await S.mappa.requestPermission({ mode: "readwrite" });
     S.fajlEngedely = p === "granted";
     return S.fajlEngedely;
 };
 
 S._fajlbaIrMost = async function () {
-    if (!S.fajlHandle || !S.fajlEngedely) return;
+    if (!S.mappa || !S.fajlEngedely || !S.adat) return;
     try {
-        const w = await S.fajlHandle.createWritable();
+        const fh = await S.mappa.getFileHandle(S.MENTES_NEV, { create: true });
+        const w = await fh.createWritable();
         await w.write(S.exportJson());
         await w.close();
         await S.dbSet("utolsoFajlMentes", U.most());
     } catch (e) {
         console.error(e);
         S.fajlEngedely = false;
-        U.toast("Nem sikerült a fájlba menteni: " + e.message);
+        U.toast("Nem sikerült a mappába menteni: " + e.message);
     }
 };
 S._fajlbaIr = U.debounce(function () { S._fajlbaIrMost(); }, 1500);
 
-/* Újabb adat van a fájlban (pl. másik gépről, Drive-szinkron után)? */
-S.fajlbolUjabb = async function () {
-    if (!S.fajlHandle || !S.fajlEngedely) return null;
+/* A mappában lévő mentések közül a legújabb, ha újabb az itteninél.
+   Visszaad: { obj, nev } vagy null */
+S.mappabolUjabb = async function () {
+    if (!S.mappa || !S.fajlEngedely || !S.adat) return null;
+    const jeloltek = [];
     try {
-        const f = await S.fajlHandle.getFile();
-        const obj = S.jsonEllenoriz(JSON.parse(await f.text()));
-        if (obj.modositva && S.adat && obj.modositva > S.adat.modositva) return obj;
-    } catch (e) { console.warn("Fájl olvasás:", e); }
+        for await (const [nev, h] of S.mappa.entries()) {
+            if (h.kind !== "file" || !S.MENTES_MINTA.test(nev)) continue;
+            const f = await h.getFile();
+            jeloltek.push({ nev: nev, f: f });
+        }
+    } catch (e) { console.warn("Mappa olvasás:", e); return null; }
+
+    // a legutóbb módosult fájlokat nézzük meg (max. 10), a tartalmuk dönt
+    jeloltek.sort(function (a, b) { return b.f.lastModified - a.f.lastModified; });
+    let legjobb = null;
+    for (const j of jeloltek.slice(0, 10)) {
+        try {
+            const obj = S.jsonEllenoriz(JSON.parse(await j.f.text()));
+            if (obj.modositva && (!legjobb || obj.modositva > legjobb.obj.modositva)) legjobb = { obj: obj, nev: j.nev };
+        } catch (e) { /* nem KIADOK mentés vagy sérült – kihagyjuk */ }
+    }
+    if (legjobb && legjobb.obj.modositva > S.adat.modositva) return legjobb;
     return null;
 };
 

@@ -65,17 +65,18 @@ majd a böngészőben: http://localhost:8000
 
 ## Szinkron Windows ↔ Android
 
-Az adatok mindegyik eszközön helyben vannak. Átvitel:
+Az adatok mindegyik eszközön helyben vannak. A közös pont egy Google Drive mappa (pl. `KIADOK`).
 
-- **Windows (Chrome/Edge):** Adatok → „Mentési fájl kiválasztása…” → pl. a Google Drive mappádba
-  `kiadok-adatok.json`. Ezután minden módosítás után automatikusan beleír. Ha a fájl újabb
-  (pl. a telefonról frissítetted), induláskor felajánlja a betöltést.
-- **Android:** Adatok → „Mentés megosztással” → Drive (`.txt` néven, mert az Android .json-t nem
-  enged megosztani – a tartalom ugyanaz). A másik irány: „Betöltés fájlból…” → Drive → a fájl.
+- **Windows (Chrome/Edge):** telepítsd a *Google Drive for desktop* programot (így lesz `G:\Saját meghajtó`).
+  Adatok → „Mentési mappa kiválasztása…” → `G:\Saját meghajtó\KIADOK`. Ezután az app minden módosítás után
+  ide írja a `kiadok-adatok.json` fájlt, és induláskor (meg amikor visszatérsz az ablakba) megnézi, van-e a
+  mappában újabb mentés – pl. a telefonról érkezett `kiadok-adatok_ÉÉÉÉ-HH-NN.txt` –, és felajánlja a betöltését.
+- **Android:** Adatok → „Mentés megosztással” → Drive → a `KIADOK` mappa (`.txt` néven, mert az Android .json-t
+  nem enged megosztani – a tartalom ugyanaz). A másik irány: „Betöltés fájlból…” → Drive → `KIADOK` → `kiadok-adatok.json`.
 
 A betöltés mindig megmutatja, melyik adat az újabb, és szól, ha régebbit töltenél be.
 
 ## Módosításkor
 
 Ha bármelyik fájlt módosítod, az `sw.js`-ben emeld a `CACHE_NAME` verzióját
-(`kiadok-cache-v1` → `v2`), különben a telepített app a régi fájlokat használja.
+(pl. `kiadok-cache-v2` → `v3`), különben a telepített app a régi fájlokat használja.

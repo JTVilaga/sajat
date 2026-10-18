@@ -13,21 +13,23 @@ AdatokNezet.render = async function (el) {
     const megoszthato = !!(navigator.canShare && window.File && navigator.canShare({ files: [new File(["x"], "x.txt", { type: "text/plain" })] }));
 
     let fajlBlokk;
-    if (!S.fajlApiVan()) {
-        fajlBlokk = "<p class='halvany'>Ezen az eszközön nincs automatikus fájlmentés (csak asztali Chrome/Edge tudja). " +
-            "Használd a „Mentés megosztással” vagy „Mentés letöltéssel” gombot.</p>";
-    } else if (S.fajlHandle) {
-        fajlBlokk = "<p>Automatikus mentés ide: <b>" + U.esc(S.fajlHandle.name) + "</b> " +
+    if (!S.mappaApiVan()) {
+        fajlBlokk = "<p class='halvany'>Ezen az eszközön nincs automatikus mappamentés (csak asztali Chrome/Edge tudja). " +
+            "Használd a „Mentés megosztással” gombot, és a Drive-on ugyanabba a mappába tedd, amit a Windowson beállítottál.</p>";
+    } else if (S.mappa) {
+        fajlBlokk = "<p>Mentési mappa: <b>" + U.esc(S.mappa.name) + "</b> " +
             (S.fajlEngedely ? "<span class='cimke cimke-ok'>aktív</span>" : "<span class='cimke cimke-figy'>engedély kell</span>") + "</p>" +
-            (utolsoFajl ? "<p class='halvany kicsi'>Utoljára kiírva: " + U.idopontHu(utolsoFajl) + "</p>" : "") +
+            "<p class='halvany kicsi'>Ide írja: " + S.MENTES_NEV + (utolsoFajl ? " · utoljára: " + U.idopontHu(utolsoFajl) : "") + "</p>" +
             "<div class='gomb-sor'>" +
             (!S.fajlEngedely ? "<button class='btn btn-elsodleges' id='ad-fajl-enged'>Engedélyezés</button>" : "") +
-            "<button class='btn btn-masodlagos' id='ad-fajl-valaszt'>Másik fájl…</button>" +
+            (S.fajlEngedely ? "<button class='btn btn-masodlagos' id='ad-fajl-ellenoriz'>Újabb mentés keresése</button>" : "") +
+            "<button class='btn btn-masodlagos' id='ad-fajl-valaszt'>Másik mappa…</button>" +
             "<button class='btn btn-masodlagos' id='ad-fajl-ki'>Kikapcsolás</button></div>";
     } else {
-        fajlBlokk = "<p>Válassz egy fájlt (pl. a <b>Google Drive</b> mappádban), és az app minden módosítás után automatikusan beleírja az adatokat. " +
-            "Ha a fájl egy másik eszközről újabb, induláskor felajánlja a betöltését.</p>" +
-            "<div class='gomb-sor'><button class='btn btn-elsodleges' id='ad-fajl-valaszt'>Mentési fájl kiválasztása…</button></div>";
+        fajlBlokk = "<p>Válassz egy <b>mappát</b> – pl. a Google Drive for desktop meghajtóján: <b>G:\\Saját meghajtó\\KIADOK</b>. " +
+            "Az app minden módosítás után ide írja a <b>" + S.MENTES_NEV + "</b> fájlt, és induláskor megnézi, " +
+            "van-e itt újabb mentés (pl. a telefonról megosztott <b>kiadok-adatok_….txt</b>).</p>" +
+            "<div class='gomb-sor'><button class='btn btn-elsodleges' id='ad-fajl-valaszt'>Mentési mappa kiválasztása…</button></div>";
     }
 
     const sablonok = a.sablonok.map(function (s, i) {
@@ -55,7 +57,7 @@ AdatokNezet.render = async function (el) {
         (megoszthato ? "<button class='btn btn-elsodleges' id='ad-megoszt'>Mentés megosztással (pl. Drive)</button>" : "") +
         "<button class='btn " + (megoszthato ? "btn-masodlagos" : "btn-elsodleges") + "' id='ad-letolt'>Mentés letöltéssel (.json)</button>" +
         "<button class='btn btn-masodlagos' id='ad-betolt'>Betöltés fájlból…</button>" +
-        "</div><h4 class='alcim'>Automatikus mentés fájlba</h4>" + fajlBlokk + "</section>" +
+        "</div><h4 class='alcim'>Automatikus mentés mappába</h4>" + fajlBlokk + "</section>" +
 
         "<section class='kartya'><div class='kartya-fej'><h3>Google Naptár (ICS)</h3></div>" +
         "<p>Elkészíti a <b>H_naplo.ics</b> fájlt (2026-tól). Utána: calendar.google.com → Beállítások → Importálás és exportálás → " +
@@ -92,11 +94,28 @@ AdatokNezet.render = async function (el) {
     on("ad-megoszt", AdatokNezet.megoszt);
     on("ad-betolt", AdatokNezet.betoltFajlbol);
     on("ad-fajl-valaszt", async function () {
-        try { await S.fajlBeallit(); U.toast("Automatikus mentés bekapcsolva."); A.frissit(); A.fajlSav(); }
-        catch (e) { if (e.name !== "AbortError") U.toast("Hiba: " + e.message); }
+        try {
+            await S.mappaBeallit();
+            A.fajlSav();
+            // előbb megnézzük, van-e a mappában újabb mentés, csak utána írunk bele
+            await A.fajlEllenoriz();
+            await S._fajlbaIrMost();
+            U.toast("Automatikus mentés bekapcsolva.");
+            A.frissit();
+        } catch (e) { if (e.name !== "AbortError") U.toast("Hiba: " + e.message); }
     });
-    on("ad-fajl-enged", async function () { await S.fajlEngedelyKer(); A.frissit(); A.fajlSav(); if (S.fajlEngedely) S._fajlbaIrMost(); });
-    on("ad-fajl-ki", async function () { await S.fajlLeallit(); U.toast("Automatikus mentés kikapcsolva."); A.frissit(); A.fajlSav(); });
+    on("ad-fajl-enged", async function () {
+        await S.fajlEngedelyKer(); A.fajlSav();
+        if (S.fajlEngedely) { await A.fajlEllenoriz(); await S._fajlbaIrMost(); }
+        A.frissit();
+    });
+    on("ad-fajl-ellenoriz", async function () {
+        const elotte = S.adat.modositva;
+        A._elutasitott = null;
+        await A.fajlEllenoriz();
+        if (S.adat.modositva === elotte) U.toast("Nincs újabb mentés a mappában.");
+    });
+    on("ad-fajl-ki", async function () { await S.mappaLeallit(); U.toast("Automatikus mentés kikapcsolva."); A.frissit(); A.fajlSav(); });
     on("ad-ics", function () { const db = ICS.export(); U.toast("H_naplo.ics elkészült (" + db + " esemény)."); });
     on("ad-xlsx-be", AdatokNezet.excelBe);
     on("ad-xlsx-ki", async function () {
@@ -109,7 +128,7 @@ AdatokNezet.render = async function (el) {
     on("ad-torol", async function () {
         if (!(await U.megerosit("Biztosan törlöd az ÖSSZES adatot erről az eszközről? Ez nem vonható vissza.", { veszelyes: true, igen: "Mindent törlök" }))) return;
         if (!(await U.megerosit("Utolsó figyelmeztetés: készült mentés?", { veszelyes: true, igen: "Igen, törlés" }))) return;
-        await S.fajlLeallit();
+        await S.mappaLeallit();
         await S.torolMindent();
         U.toast("Minden adat törölve.");
         location.hash = "#udvozlo";
