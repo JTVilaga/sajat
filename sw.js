@@ -3,7 +3,7 @@
    FONTOS: ha bármelyik fájlt módosítod, emeld a CACHE_NAME verzióját,
    különben a telepített app a régi, gyorsítótárazott fájlokat használja.
    ------------------------------------------------------------------ */
-const CACHE_NAME = "kiadok-cache-v4";
+const CACHE_NAME = "kiadok-cache-v5";
 
 const ASSETS_TO_CACHE = [
     "./",

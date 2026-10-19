@@ -249,7 +249,7 @@ SugoNezet.render = function (el) {
         "Az azonosítók ugyanazok, mint az Excel makróé, így nem duplázódnak.</p>" +
         "<p><b>Szinkron a gép és a telefon között</b> – a fejléc <b>⇄ Szinkron</b> gombja: amelyik eszközön utoljára szerkesztettél, ott <b>Küldés</b>, " +
         "a másikon <b>Fogadás</b>. Az átvitel Quick Share-rel megy (Bluetooth / közvetlen WiFi), szerver nélkül. " +
-        "Telefonon a Küldés megnyitja a megosztás menüt → Quick Share → a laptop. Windowson a fájl a Letöltésekbe kerül → jobb klikk → Küldés Quick Share-rel → a telefon. " +
+        "Telefonon a Küldés megnyitja a megosztás menüt → Quick Share → a laptop. Windowson a fájl a Letöltésekbe kerül → húzd rá a Quick Share ablakára → a telefon. " +
         "Fogadáskor az app megmutatja, melyik adat az újabb. A narancs pötty a ⇄ gombon: van el nem küldött módosítás.</p>" +
         "<p><b>Google Drive szinkron</b> (tartalék, nem kötelező) – Adatok oldal. Ha be van kapcsolva, a fejlécben ☁ gomb jelzi az állapotát.</p>" +
         "</div></section>";

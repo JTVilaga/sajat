@@ -76,7 +76,8 @@ Q.kuld = async function () {
             "<p class='kod-sor'>" + U.esc(nev) + "</p>" +
             "<ol class='lepes-lista'>" +
             "<li>Nyisd meg a Letöltések mappát (Chrome-ban: Ctrl+J → „Megjelenítés mappában”).</li>" +
-            "<li>Jobb klikk a fájlon → <b>Küldés Quick Share-rel</b> (vagy húzd rá a Quick Share ablakára) → válaszd a telefont.</li>" +
+            "<li>Nyisd meg a <b>Quick Share</b> programot, és <b>húzd rá a fájlt</b> az ablakára → válaszd a telefont. " +
+            "<span class='halvany'>(A jobb klikk menüben is lehet „Küldés Quick Share-rel”, Windows 11-en a „További lehetőségek megjelenítése” alatt.)</span></li>" +
             "<li>A telefonon a KIADOK appban: <b>⇄ → Fogadás</b>, és válaszd ki a kapott fájlt.</li>" +
             "</ol>",
         gombok: [{ felirat: "Rendben", osztaly: "btn-elsodleges" }]
