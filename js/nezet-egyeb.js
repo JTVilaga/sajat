@@ -247,10 +247,11 @@ SugoNezet.render = function (el) {
         "<p><b>Napló</b> – a régi H_napló: magától frissül, nem kell „Feltöltés” gomb.</p>" +
         "<p><b>Google Naptár</b> – Adatok → „ICS export”, majd calendar.google.com → Beállítások → Importálás és exportálás → a H_naplo.ics fájl → „H_napló” naptár. " +
         "Az azonosítók ugyanazok, mint az Excel makróé, így nem duplázódnak.</p>" +
-        "<p><b>Szinkron</b> – Adatok → „Bejelentkezés Google-lel és szinkron bekapcsolása” mindkét eszközön, ugyanazzal a Google fiókkal. " +
-        "Az app egy rejtett, csak neki fenntartott helyre ment a Google Drive-on; módosítás után magától feltölt, indításkor és visszatéréskor letölti az újabbat. " +
-        "A fejlécben a ☁ gomb mutatja az állapotot: zöld = szinkronban, narancs = kattints a bejelentkezéshez (kb. óránként kellhet), piros = hiba. " +
-        "Ha mindkét eszközön módosítottál, mielőtt szinkronizált volna, megkérdezi, melyik maradjon.</p>" +
+        "<p><b>Szinkron a gép és a telefon között</b> – a fejléc <b>⇄ Szinkron</b> gombja: amelyik eszközön utoljára szerkesztettél, ott <b>Küldés</b>, " +
+        "a másikon <b>Fogadás</b>. Az átvitel Quick Share-rel megy (Bluetooth / közvetlen WiFi), szerver nélkül. " +
+        "Telefonon a Küldés megnyitja a megosztás menüt → Quick Share → a laptop. Windowson a fájl a Letöltésekbe kerül → jobb klikk → Küldés Quick Share-rel → a telefon. " +
+        "Fogadáskor az app megmutatja, melyik adat az újabb. A narancs pötty a ⇄ gombon: van el nem küldött módosítás.</p>" +
+        "<p><b>Google Drive szinkron</b> (tartalék, nem kötelező) – Adatok oldal. Ha be van kapcsolva, a fejlécben ☁ gomb jelzi az állapotát.</p>" +
         "</div></section>";
     U.$("#sugo-szerk", el).onclick = async function () {
         const e = await U.urlap({ cim: "Jegyzetek szerkesztése", szeles: true,

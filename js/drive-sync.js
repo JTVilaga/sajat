@@ -292,7 +292,7 @@ D.allapot = function (kod, uzenet) {
         offline: "☁ Offline"
     }[kod];
     g.textContent = szoveg;
-    g.className = "btn btn-kicsi szinkron-gomb sz-" + kod;
+    g.className = "btn btn-kicsi szinkron-gomb sz-" + kod + (kod === "ki" ? " hidden" : "");   // kikapcsolva nem látszik
     g.title = {
         ki: "A Google Drive szinkron nincs bekapcsolva (Adatok oldal)",
         bejelentkezes: "Kattints a Google bejelentkezéshez – utána szinkronizál",

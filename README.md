@@ -63,7 +63,19 @@ majd a böngészőben: http://localhost:8000
 2. Telepítés: Windowson a címsor telepítés ikonja, Androidon ⋮ → „Alkalmazás telepítése”.
 3. Széf → „Jelszavas védelem” – javasolt bekapcsolni.
 
-## Szinkron Windows ↔ Android (Google Drive)
+## Szinkron Windows ↔ Android – Quick Share (ajánlott)
+
+Szerver és felhő nélkül (`js/kuldes.js`). A fejléc **⇄ Szinkron** gombja:
+
+- **Küldés** – azon az eszközön, ahol utoljára szerkesztettél.
+  - Telefon: megosztás menü → Quick Share → a laptop.
+  - Windows: a fájl a Letöltésekbe kerül (`KIADOK_PC_ÉÉÉÉ-HH-NN_ÓÓPP.json`) → jobb klikk → Küldés Quick Share-rel → a telefon.
+- **Fogadás** – a másikon: kiválasztod a kapott fájlt; az app megmutatja, melyik adat az újabb, és szól, ha régebbit töltenél be.
+- A narancs pötty a ⇄ gombon: ezen az eszközön van el nem küldött módosítás.
+
+Windowsra a Google ingyenes **Quick Share** programja kell (Bluetooth + WiFi), Androidon beépített.
+
+## Tartalék: Google Drive szinkron (nem kötelező)
 
 Az app közvetlenül a Google Drive API-val szinkronizál (`js/drive-sync.js`), fájlkezelő és
 Google Drive for desktop nélkül. Egyetlen fájl van: `kiadok-adatok.json` a Drive rejtett
@@ -83,4 +95,4 @@ A kézi mentés (.json letöltés / megosztás / betöltés) biztonsági pillana
 ## Módosításkor
 
 Ha bármelyik fájlt módosítod, az `sw.js`-ben emeld a `CACHE_NAME` verzióját
-(pl. `kiadok-cache-v3` → `v4`), különben a telepített app a régi fájlokat használja.
+(pl. `kiadok-cache-v4` → `v5`), különben a telepített app a régi fájlokat használja.

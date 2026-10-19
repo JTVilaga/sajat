@@ -94,6 +94,8 @@ A.indit = async function () {
 
     // Google Drive szinkron (ha be van kapcsolva)
     D.indit();
+    // Küldés / fogadás a másik eszközre (Quick Share)
+    Q.indit();
 
     document.addEventListener("visibilitychange", function () {
         // napváltáskor a "ma" jelölés frissüljön

@@ -3,7 +3,7 @@
    FONTOS: ha bármelyik fájlt módosítod, emeld a CACHE_NAME verzióját,
    különben a telepített app a régi, gyorsítótárazott fájlokat használja.
    ------------------------------------------------------------------ */
-const CACHE_NAME = "kiadok-cache-v3";
+const CACHE_NAME = "kiadok-cache-v4";
 
 const ASSETS_TO_CACHE = [
     "./",
@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
     "js/util.js",
     "js/store.js",
     "js/drive-sync.js",
+    "js/kuldes.js",
     "js/xlsx-io.js",
     "js/ics.js",
     "js/naplo-adat.js",

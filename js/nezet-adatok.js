@@ -56,7 +56,12 @@ AdatokNezet.render = async function (el) {
         "</ul></section>" +
 
         "<section class='kartya'><div class='kartya-fej'><h3>Szinkron és mentés</h3></div>" +
-        "<h4 class='alcim'>Google Drive szinkron</h4>" + driveBlokk +
+        "<h4 class='alcim'>Szinkron a másik eszközzel (Quick Share)</h4>" +
+        "<p>Szerver és internet nélkül: amelyik eszközön utoljára szerkesztettél, onnan küldd át a másikra Quick Share-rel. " +
+        "Ugyanez a fejléc <b>⇄ Szinkron</b> gombjával is elérhető; a narancs pötty jelzi, ha van el nem küldött módosítás.</p>" +
+        "<div class='gomb-sor'><button class='btn btn-elsodleges' id='ad-q-kuld'>📤 Küldés</button>" +
+        "<button class='btn btn-masodlagos' id='ad-q-fogad'>📥 Fogadás</button></div>" +
+        "<h4 class='alcim'>Tartalék: Google Drive szinkron (nem kötelező)</h4>" + driveBlokk +
         "<h4 class='alcim'>Kézi biztonsági mentés</h4>" +
         "<p class='halvany kicsi'>Egy pillanatkép fájlba – pl. nagyobb változtatás előtt. A szinkronhoz nem kell.</p>" +
         "<div class='gomb-sor'>" +
@@ -96,6 +101,8 @@ AdatokNezet.render = async function (el) {
 
     // --- Gombok ---
     const on = function (id, fn) { const b = U.$("#" + id, el); if (b) b.onclick = fn; };
+    on("ad-q-kuld", Q.kuld);
+    on("ad-q-fogad", Q.fogad);
     on("ad-letolt", AdatokNezet.letolt);
     on("ad-megoszt", AdatokNezet.megoszt);
     on("ad-betolt", AdatokNezet.betoltFajlbol);
