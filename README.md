@@ -96,4 +96,4 @@ A kézi mentés (.json letöltés / megosztás / betöltés) biztonsági pillana
 ## Módosításkor
 
 Ha bármelyik fájlt módosítod, az `sw.js`-ben emeld a `CACHE_NAME` verzióját
-(pl. `kiadok-cache-v5` → `v6`), különben a telepített app a régi fájlokat használja.
+(pl. `kiadok-cache-v6` → `v7`), különben a telepített app a régi fájlokat használja.

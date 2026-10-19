@@ -78,7 +78,8 @@
     <div id="toast" class="hidden"></div>
 
     <script>
-        if ("serviceWorker" in navigator) {
+        // mappából (file://) futtatva nincs service worker – ott nincs is rá szükség
+        if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
             window.addEventListener("load", function () {
                 navigator.serviceWorker.register("sw.js");
             });

@@ -9,8 +9,6 @@ AdatokNezet.render = async function (el) {
     const a = S.adat;
     const utolsoFajl = await S.dbGet("utolsoFajlMentes").catch(function () { return null; });
     const utolsoExport = await S.dbGet("utolsoExport").catch(function () { return null; });
-    // Az Android megosztás nem enged .json fájlt, ezért .txt néven osztjuk meg (a tartalom ugyanaz)
-    const megoszthato = !!(navigator.canShare && window.File && navigator.canShare({ files: [new File(["x"], "x.txt", { type: "text/plain" })] }));
 
     // Google Drive szinkron blokk
     let driveBlokk;
@@ -62,11 +60,11 @@ AdatokNezet.render = async function (el) {
         "<div class='gomb-sor'><button class='btn btn-elsodleges' id='ad-q-kuld'>📤 Küldés</button>" +
         "<button class='btn btn-masodlagos' id='ad-q-fogad'>📥 Fogadás</button></div>" +
         "<h4 class='alcim'>Tartalék: Google Drive szinkron (nem kötelező)</h4>" + driveBlokk +
-        "<h4 class='alcim'>Kézi biztonsági mentés</h4>" +
-        "<p class='halvany kicsi'>Egy pillanatkép fájlba – pl. nagyobb változtatás előtt. A szinkronhoz nem kell.</p>" +
+        "<h4 class='alcim'>Teljes biztonsági mentés</h4>" +
+        "<p class='halvany kicsi'>Egy .zip fájl a Letöltésekbe: benne a teljes program és az adataid. Kicsomagolva Windowson az " +
+        "<b>index.html</b> megnyitásával GitHub és internet nélkül is elindul. Visszatöltés: „Betöltés fájlból…” (a .zip-et is elfogadja).</p>" +
         "<div class='gomb-sor'>" +
-        (megoszthato ? "<button class='btn btn-masodlagos' id='ad-megoszt'>Mentés megosztással</button>" : "") +
-        "<button class='btn btn-masodlagos' id='ad-letolt'>Mentés letöltéssel (.json)</button>" +
+        "<button class='btn btn-masodlagos' id='ad-letolt'>Teljes mentés (.zip)</button>" +
         "<button class='btn btn-masodlagos' id='ad-betolt'>Betöltés fájlból…</button>" +
         "</div></section>" +
 
@@ -104,7 +102,6 @@ AdatokNezet.render = async function (el) {
     on("ad-q-kuld", Q.kuld);
     on("ad-q-fogad", Q.fogad);
     on("ad-letolt", AdatokNezet.letolt);
-    on("ad-megoszt", AdatokNezet.megoszt);
     on("ad-betolt", AdatokNezet.betoltFajlbol);
     on("ad-drive-be", function () { D.bekapcsol(); });
     on("ad-drive-most", function () { D.szinkron({ kezi: true }); });
@@ -144,30 +141,69 @@ AdatokNezet.render = async function (el) {
     });
 };
 
-AdatokNezet.fajlnev = function () { return "kiadok-adatok_" + U.ma() + ".json"; };
-
-AdatokNezet.letolt = function () {
-    U.letolt(AdatokNezet.fajlnev(), S.exportJson(), "application/json");
-    S.dbSet("utolsoExport", U.most());
-    U.toast("Mentés letöltve: " + AdatokNezet.fajlnev());
-};
-
-AdatokNezet.megoszt = async function () {
-    const f = new File([S.exportJson()], AdatokNezet.fajlnev().replace(".json", ".txt"), { type: "text/plain" });
+/* Teljes mentés: a program összes fájlja + az adatok egy .zip-ben.
+   A program fájljainak listáját a sw.js-ből olvassa (ott van az offline lista),
+   így új fájlnál nem kell két helyen karbantartani. */
+AdatokNezet.letolt = async function () {
+    U.toast("Mentés készül…", { ido: 10000 });
     try {
-        await navigator.share({ files: [f], title: "KIADOK mentés" });
+        await X.betolt();                     // a SheetJS-ben lévő CFB tud zip-et írni
+        const CFB = XLSX.CFB;
+        const zip = CFB.utils.cfb_new({ root: "R" });
+        const sw = await (await fetch("sw.js", { cache: "no-store" })).text();
+        const lista = (sw.match(/ASSETS_TO_CACHE\s*=\s*\[([\s\S]*?)\]/) || [, ""])[1]
+            .match(/"([^"]+)"/g).map(function (x) { return x.slice(1, -1); })
+            .filter(function (x) { return x !== "./"; })
+            .concat(["sw.js", "README.md"]);
+        const hiany = [];
+        for (const ut of lista) {
+            try {
+                const v = await fetch(ut, { cache: "no-store" });
+                if (!v.ok) throw new Error(v.status);
+                CFB.utils.cfb_add(zip, "KIADOK/" + ut, new Uint8Array(await v.arrayBuffer()));
+            } catch (e) { hiany.push(ut); }
+        }
+        const enc = new TextEncoder();
+        CFB.utils.cfb_add(zip, "KIADOK/adatok/kiadok-adatok.json", enc.encode(S.exportJson()));
+        CFB.utils.cfb_add(zip, "KIADOK/OLVASSEL.txt", enc.encode(
+            "KIADOK teljes mentés – " + U.idopontHu(U.most()) + "\r\n\r\n" +
+            "adatok\\kiadok-adatok.json  = az adataid (ezt lehet betölteni az appba)\r\n" +
+            "index.html                 = a program; kicsomagolás után Chrome-ban/Edge-ben megnyitva\r\n" +
+            "                             internet és GitHub nélkül is fut (Windowson).\r\n\r\n" +
+            "Visszaállítás: nyisd meg az index.html-t (vagy a telepített appot) → „Mentési fájl” /\r\n" +
+            "Adatok → „Betöltés fájlból…” → adatok\\kiadok-adatok.json (vagy maga a .zip).\r\n\r\n" +
+            "Figyelem: ha a Széf nincs jelszóval titkosítva, a jelszavaid olvashatóan vannak a json-ban!\r\n"));
+        const d = new Date();
+        const nev = "KIADOK_teljes_mentes_" + U.ma() + "_" + U.ketJegy(d.getHours()) + U.ketJegy(d.getMinutes()) + ".zip";
+        U.letolt(nev, new Blob([CFB.write(zip, { type: "array", fileType: "zip" })], { type: "application/zip" }));
         S.dbSet("utolsoExport", U.most());
+        U.toast("Teljes mentés letöltve: " + nev + (hiany.length ? " (hiányzott: " + hiany.join(", ") + ")" : ""), { ido: 5000 });
     } catch (e) {
-        if (e.name !== "AbortError") U.toast("Megosztás nem sikerült: " + e.message);
+        console.error(e);
+        U.uzenet("Mentés", "Nem sikerült a teljes mentés: " + e.message + "\nAz adatokat a Küldés gombbal akkor is el tudod menteni.");
     }
 };
 
-/* Betöltés .json mentésből – összehasonlítással */
+/* Egy .zip mentésből kiveszi a kiadok-adatok.json tartalmát */
+AdatokNezet.zipbolAdat = async function (file) {
+    await X.betolt();
+    const cfb = XLSX.CFB.read(new Uint8Array(await file.arrayBuffer()), { type: "array" });
+    const i = cfb.FullPaths.findIndex(function (p) { return /kiadok-adatok[^\/]*\.json$/i.test(p); });
+    if (i < 0) throw new Error("A .zip-ben nincs kiadok-adatok.json.");
+    return new TextDecoder().decode(cfb.FileIndex[i].content);
+};
+
+/* Betöltés mentésből (.json / .txt / teljes mentés .zip) – összehasonlítással */
 AdatokNezet.betoltFajlbol = async function () {
-    const f = await U.fajlValaszt(".json,.txt,application/json,text/plain");
+    const f = await U.fajlValaszt(".json,.txt,.zip,application/json,text/plain,application/zip");
     if (!f) return;
     let obj;
-    try { obj = S.jsonEllenoriz(JSON.parse(await f.text())); }
+    try {
+        const szoveg = /\.zip$/i.test(f.name) ? await AdatokNezet.zipbolAdat(f) : await f.text();
+        obj = JSON.parse(szoveg);
+        delete obj.kuldes;
+        obj = S.jsonEllenoriz(obj);
+    }
     catch (e) { U.uzenet("Hibás fájl", e.message); return; }
     await AdatokNezet.csereMegerositessel(obj, f.name);
 };
@@ -233,7 +269,7 @@ UdvozloNezet.render = function (el) {
         "<p class='halvany'>Még nincs adat ezen az eszközön. Honnan töltsem be?</p>" +
         "<div class='gomb-oszlop'>" +
         "<button class='btn btn-elsodleges' id='u-drive'>☁ Google Drive-ról (szinkron)</button>" +
-        "<button class='btn btn-masodlagos' id='u-json'>Mentési fájl (kiadok-adatok.json)</button>" +
+        "<button class='btn btn-masodlagos' id='u-json'>Mentési fájl (.json vagy teljes mentés .zip)</button>" +
         "<button class='btn btn-masodlagos' id='u-xlsx'>Excel: S_KIADOK.xlsm</button>" +
         "<button class='btn btn-masodlagos' id='u-ures'>Üres kezdés</button>" +
         "</div></section>";
@@ -245,9 +281,13 @@ UdvozloNezet.render = function (el) {
         } catch (e) { U.uzenet("Bejelentkezés", e.message); }
     };
     U.$("#u-json", el).onclick = async function () {
-        const f = await U.fajlValaszt(".json,.txt,application/json,text/plain");
+        const f = await U.fajlValaszt(".json,.txt,.zip,application/json,text/plain,application/zip");
         if (!f) return;
-        try { S.csere(S.jsonEllenoriz(JSON.parse(await f.text()))); location.hash = "#naptar"; U.toast("Adatok betöltve."); }
+        try {
+            const obj = JSON.parse(/\.zip$/i.test(f.name) ? await AdatokNezet.zipbolAdat(f) : await f.text());
+            delete obj.kuldes;
+            S.csere(S.jsonEllenoriz(obj)); location.hash = "#naptar"; U.toast("Adatok betöltve.");
+        }
         catch (e) { U.uzenet("Hibás fájl", e.message); }
     };
     U.$("#u-xlsx", el).onclick = async function () {
