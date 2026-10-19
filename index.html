@@ -15,6 +15,7 @@
     <!-- Sorrend számít: util → store → segédmodulok → nézetek → app -->
     <script src="js/util.js"></script>
     <script src="js/store.js"></script>
+    <script src="js/drive-sync.js"></script>
     <script src="js/naplo-adat.js"></script>
     <script src="js/xlsx-io.js"></script>
     <script src="js/ics.js"></script>
@@ -36,14 +37,10 @@
         </div>
         <div class="fejlec-jobb">
             <span id="mentes-allapot" class="mentes-allapot" title="Mentési állapot"></span>
+            <button id="btn-szinkron" class="btn btn-kicsi szinkron-gomb sz-ki" title="Google Drive szinkron">☁</button>
             <button id="btn-telepit" class="btn btn-kicsi btn-vilagos hidden">Telepítés</button>
         </div>
     </header>
-
-    <div id="fajlmentes-sav" class="figyelmeztetes-sav hidden">
-        <span>Az automatikus fájlmentéshez újra engedély kell.</span>
-        <button id="btn-fajlmentes-folytat" class="btn btn-kicsi">Folytatás</button>
-    </div>
 
     <div id="keret">
         <!-- OLDALSÓ / ALSÓ NAVIGÁCIÓ -->

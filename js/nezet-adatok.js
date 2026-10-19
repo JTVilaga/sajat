@@ -12,24 +12,28 @@ AdatokNezet.render = async function (el) {
     // Az Android megosztás nem enged .json fájlt, ezért .txt néven osztjuk meg (a tartalom ugyanaz)
     const megoszthato = !!(navigator.canShare && window.File && navigator.canShare({ files: [new File(["x"], "x.txt", { type: "text/plain" })] }));
 
-    let fajlBlokk;
-    if (!S.mappaApiVan()) {
-        fajlBlokk = "<p class='halvany'>Ezen az eszközön nincs automatikus mappamentés (csak asztali Chrome/Edge tudja). " +
-            "Használd a „Mentés megosztással” gombot, és a Drive-on ugyanabba a mappába tedd, amit a Windowson beállítottál.</p>";
-    } else if (S.mappa) {
-        fajlBlokk = "<p>Mentési mappa: <b>" + U.esc(S.mappa.name) + "</b> " +
-            (S.fajlEngedely ? "<span class='cimke cimke-ok'>aktív</span>" : "<span class='cimke cimke-figy'>engedély kell</span>") + "</p>" +
-            "<p class='halvany kicsi'>Ide írja: " + S.MENTES_NEV + (utolsoFajl ? " · utoljára: " + U.idopontHu(utolsoFajl) : "") + "</p>" +
-            "<div class='gomb-sor'>" +
-            (!S.fajlEngedely ? "<button class='btn btn-elsodleges' id='ad-fajl-enged'>Engedélyezés</button>" : "") +
-            (S.fajlEngedely ? "<button class='btn btn-masodlagos' id='ad-fajl-ellenoriz'>Újabb mentés keresése</button>" : "") +
-            "<button class='btn btn-masodlagos' id='ad-fajl-valaszt'>Másik mappa…</button>" +
-            "<button class='btn btn-masodlagos' id='ad-fajl-ki'>Kikapcsolás</button></div>";
+    // Google Drive szinkron blokk
+    let driveBlokk;
+    if (!D.beallitas.be) {
+        driveBlokk = "<p>Az app közvetlenül a Google Drive-odba szinkronizál, egy rejtett, csak neki fenntartott helyre " +
+            "(a Drive-ban fájlként nem látszik, más fájljaidhoz nem fér hozzá). Kapcsold be mindkét eszközön ugyanazzal a Google fiókkal.</p>" +
+            "<div class='gomb-sor'><button class='btn btn-elsodleges' id='ad-drive-be'>Bejelentkezés Google-lel és szinkron bekapcsolása</button></div>";
     } else {
-        fajlBlokk = "<p>Válassz egy <b>mappát</b> – pl. a Google Drive for desktop meghajtóján: <b>G:\\Saját meghajtó\\KIADOK</b>. " +
-            "Az app minden módosítás után ide írja a <b>" + S.MENTES_NEV + "</b> fájlt, és induláskor megnézi, " +
-            "van-e itt újabb mentés (pl. a telefonról megosztott <b>kiadok-adatok_….txt</b>).</p>" +
-            "<div class='gomb-sor'><button class='btn btn-elsodleges' id='ad-fajl-valaszt'>Mentési mappa kiválasztása…</button></div>";
+        const cimke = {
+            ok: "<span class='cimke cimke-ok'>szinkronban</span>",
+            folyamatban: "<span class='cimke cimke-ma'>folyamatban…</span>",
+            bejelentkezes: "<span class='cimke cimke-figy'>bejelentkezés kell</span>",
+            offline: "<span class='cimke cimke-figy'>nincs internet</span>",
+            hiba: "<span class='cimke cimke-hiba'>hiba</span>"
+        }[D.allapotKod] || "";
+        driveBlokk = "<p>Google Drive szinkron: " + cimke + "</p>" +
+            (D.allapotKod === "hiba" && D.hibaUzenet ? "<p class='figyelmeztetes'>" + U.esc(D.hibaUzenet) + "</p>" : "") +
+            "<p class='halvany kicsi'>Utolsó szinkron: " + (D.utolso ? U.idopontHu(D.utolso) : "még nem volt") +
+            ". Módosítás után pár másodperccel magától feltölt, induláskor és visszatéréskor letölti az újabbat.</p>" +
+            "<div class='gomb-sor'>" +
+            (D.tokenErvenyes() ? "<button class='btn btn-elsodleges' id='ad-drive-most'>Szinkronizálás most</button>"
+                : "<button class='btn btn-elsodleges' id='ad-drive-be'>Bejelentkezés Google-lel</button>") +
+            "<button class='btn btn-masodlagos' id='ad-drive-ki'>Szinkron kikapcsolása</button></div>";
     }
 
     const sablonok = a.sablonok.map(function (s, i) {
@@ -51,13 +55,15 @@ AdatokNezet.render = async function (el) {
         "<li><span>Utolsó kézi mentés</span><b>" + (utolsoExport ? U.idopontHu(utolsoExport) : "még nem volt") + "</b></li>" +
         "</ul></section>" +
 
-        "<section class='kartya'><div class='kartya-fej'><h3>Mentés és szinkron</h3></div>" +
-        "<p class='halvany kicsi'>Az adatok ezen az eszközön, a böngésző tárhelyén vannak. Rendszeresen ments, és így viheted át a másik eszközre is.</p>" +
+        "<section class='kartya'><div class='kartya-fej'><h3>Szinkron és mentés</h3></div>" +
+        "<h4 class='alcim'>Google Drive szinkron</h4>" + driveBlokk +
+        "<h4 class='alcim'>Kézi biztonsági mentés</h4>" +
+        "<p class='halvany kicsi'>Egy pillanatkép fájlba – pl. nagyobb változtatás előtt. A szinkronhoz nem kell.</p>" +
         "<div class='gomb-sor'>" +
-        (megoszthato ? "<button class='btn btn-elsodleges' id='ad-megoszt'>Mentés megosztással (pl. Drive)</button>" : "") +
-        "<button class='btn " + (megoszthato ? "btn-masodlagos" : "btn-elsodleges") + "' id='ad-letolt'>Mentés letöltéssel (.json)</button>" +
+        (megoszthato ? "<button class='btn btn-masodlagos' id='ad-megoszt'>Mentés megosztással</button>" : "") +
+        "<button class='btn btn-masodlagos' id='ad-letolt'>Mentés letöltéssel (.json)</button>" +
         "<button class='btn btn-masodlagos' id='ad-betolt'>Betöltés fájlból…</button>" +
-        "</div><h4 class='alcim'>Automatikus mentés mappába</h4>" + fajlBlokk + "</section>" +
+        "</div></section>" +
 
         "<section class='kartya'><div class='kartya-fej'><h3>Google Naptár (ICS)</h3></div>" +
         "<p>Elkészíti a <b>H_naplo.ics</b> fájlt (2026-tól). Utána: calendar.google.com → Beállítások → Importálás és exportálás → " +
@@ -93,29 +99,14 @@ AdatokNezet.render = async function (el) {
     on("ad-letolt", AdatokNezet.letolt);
     on("ad-megoszt", AdatokNezet.megoszt);
     on("ad-betolt", AdatokNezet.betoltFajlbol);
-    on("ad-fajl-valaszt", async function () {
-        try {
-            await S.mappaBeallit();
-            A.fajlSav();
-            // előbb megnézzük, van-e a mappában újabb mentés, csak utána írunk bele
-            await A.fajlEllenoriz();
-            await S._fajlbaIrMost();
-            U.toast("Automatikus mentés bekapcsolva.");
-            A.frissit();
-        } catch (e) { if (e.name !== "AbortError") U.toast("Hiba: " + e.message); }
-    });
-    on("ad-fajl-enged", async function () {
-        await S.fajlEngedelyKer(); A.fajlSav();
-        if (S.fajlEngedely) { await A.fajlEllenoriz(); await S._fajlbaIrMost(); }
+    on("ad-drive-be", function () { D.bekapcsol(); });
+    on("ad-drive-most", function () { D.szinkron({ kezi: true }); });
+    on("ad-drive-ki", async function () {
+        if (!(await U.megerosit("Kikapcsolod a szinkront ezen az eszközön? Az adatok itt és a felhőben is megmaradnak.", { igen: "Kikapcsolás" }))) return;
+        await D.kijelentkezes();
+        U.toast("Szinkron kikapcsolva.");
         A.frissit();
     });
-    on("ad-fajl-ellenoriz", async function () {
-        const elotte = S.adat.modositva;
-        A._elutasitott = null;
-        await A.fajlEllenoriz();
-        if (S.adat.modositva === elotte) U.toast("Nincs újabb mentés a mappában.");
-    });
-    on("ad-fajl-ki", async function () { await S.mappaLeallit(); U.toast("Automatikus mentés kikapcsolva."); A.frissit(); A.fajlSav(); });
     on("ad-ics", function () { const db = ICS.export(); U.toast("H_naplo.ics elkészült (" + db + " esemény)."); });
     on("ad-xlsx-be", AdatokNezet.excelBe);
     on("ad-xlsx-ki", async function () {
@@ -128,7 +119,6 @@ AdatokNezet.render = async function (el) {
     on("ad-torol", async function () {
         if (!(await U.megerosit("Biztosan törlöd az ÖSSZES adatot erről az eszközről? Ez nem vonható vissza.", { veszelyes: true, igen: "Mindent törlök" }))) return;
         if (!(await U.megerosit("Utolsó figyelmeztetés: készült mentés?", { veszelyes: true, igen: "Igen, törlés" }))) return;
-        await S.mappaLeallit();
         await S.torolMindent();
         U.toast("Minden adat törölve.");
         location.hash = "#udvozlo";
@@ -235,10 +225,18 @@ UdvozloNezet.render = function (el) {
         "<h2>KIADOK</h2><p>Kiadások, naptár, napló és előjegyzés – Excel nélkül.</p>" +
         "<p class='halvany'>Még nincs adat ezen az eszközön. Honnan töltsem be?</p>" +
         "<div class='gomb-oszlop'>" +
-        "<button class='btn btn-elsodleges' id='u-json'>Mentési fájl (kiadok-adatok.json)</button>" +
+        "<button class='btn btn-elsodleges' id='u-drive'>☁ Google Drive-ról (szinkron)</button>" +
+        "<button class='btn btn-masodlagos' id='u-json'>Mentési fájl (kiadok-adatok.json)</button>" +
         "<button class='btn btn-masodlagos' id='u-xlsx'>Excel: S_KIADOK.xlsm</button>" +
         "<button class='btn btn-masodlagos' id='u-ures'>Üres kezdés</button>" +
         "</div></section>";
+    U.$("#u-drive", el).onclick = async function () {
+        try {
+            const ok = await D.elsoLetoltes();
+            if (ok) { location.hash = "#naptar"; U.toast("Adatok betöltve a Google Drive-ról. A szinkron be van kapcsolva."); }
+            else U.uzenet("Nincs adat a felhőben", "A Google Drive-on még nincs KIADOK adat. Előbb azon az eszközön kapcsold be a szinkront, ahol az adataid vannak (Adatok → Google Drive szinkron), utána itt próbáld újra.");
+        } catch (e) { U.uzenet("Bejelentkezés", e.message); }
+    };
     U.$("#u-json", el).onclick = async function () {
         const f = await U.fajlValaszt(".json,.txt,application/json,text/plain");
         if (!f) return;

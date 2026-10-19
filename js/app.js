@@ -68,37 +68,6 @@ window.addEventListener("appinstalled", function () {
     U.toast("Telepítve! Mostantól a Start menüből / kezdőképernyőről is indíthatod.");
 });
 
-/* ---------- Automatikus fájlmentés engedély sáv ---------- */
-A.fajlSav = function () {
-    const sav = document.getElementById("fajlmentes-sav");
-    sav.classList.toggle("hidden", !(S.mappa && !S.fajlEngedely));
-};
-
-/* Újabb mentés a mentési mappában (pl. a telefonról, Drive-on át)? */
-A.fajlEllenoriz = async function () {
-    if (A._ellenoriz) return;
-    A._ellenoriz = true;
-    try {
-        const ujabb = await S.mappabolUjabb();
-        // ha egyszer már nemet mondtál ugyanerre a mentésre, nem kérdezünk újra
-        if (ujabb && ujabb.obj.modositva !== A._elutasitott) {
-            const o = ujabb.obj;
-            const ok = await U.megerosit("A mentési mappában (" + S.mappa.name + ") újabb mentés van, mint itt:\n\n" +
-                "fájl: " + ujabb.nev + "\n" +
-                "abban: " + o.kiadasok.length + " kiadás, " + o.esemenyek.length + " esemény, módosítva " + U.idopontHu(o.modositva) + "\n" +
-                "itt: " + S.adat.kiadasok.length + " kiadás, " + S.adat.esemenyek.length + " esemény, módosítva " + U.idopontHu(S.adat.modositva) +
-                "\n\nValószínűleg a másik eszközön módosítottál. Betöltöd?", { cim: "Újabb mentés a mappában", igen: "Betöltés" });
-            if (ok) {
-                S.csere(o);
-                S._fajlbaIrMost();   // a kiadok-adatok.json is legyen naprakész
-                U.toast("Az újabb adat betöltve.");
-            } else {
-                A._elutasitott = o.modositva;
-            }
-        }
-    } finally { A._ellenoriz = false; }
-};
-
 /* ---------- Indítás ---------- */
 A.indit = async function () {
     try {
@@ -123,20 +92,10 @@ A.indit = async function () {
     });
     document.getElementById("btn-telepit").onclick = A.telepit;
 
-    // Automatikus fájlmentés
-    if (S.mappa) {
-        await S.fajlEngedelyEllenoriz();
-        A.fajlSav();
-        if (S.fajlEngedely) A.fajlEllenoriz();
-    }
-    document.getElementById("btn-fajlmentes-folytat").onclick = async function () {
-        await S.fajlEngedelyKer();
-        A.fajlSav();
-        if (S.fajlEngedely) { await A.fajlEllenoriz(); S._fajlbaIrMost(); }
-    };
-    // Ha visszatérsz az ablakba, megnézzük, nem változott-e a fájl
+    // Google Drive szinkron (ha be van kapcsolva)
+    D.indit();
+
     document.addEventListener("visibilitychange", function () {
-        if (document.visibilityState === "visible" && S.fajlEngedely && !U.modalNyitva()) A.fajlEllenoriz();
         // napváltáskor a "ma" jelölés frissüljön
         if (document.visibilityState === "visible" && A._utolsoNap && A._utolsoNap !== U.ma() && !U.modalNyitva()) A.frissit();
         A._utolsoNap = U.ma();

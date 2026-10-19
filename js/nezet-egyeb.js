@@ -247,9 +247,10 @@ SugoNezet.render = function (el) {
         "<p><b>Napló</b> – a régi H_napló: magától frissül, nem kell „Feltöltés” gomb.</p>" +
         "<p><b>Google Naptár</b> – Adatok → „ICS export”, majd calendar.google.com → Beállítások → Importálás és exportálás → a H_naplo.ics fájl → „H_napló” naptár. " +
         "Az azonosítók ugyanazok, mint az Excel makróé, így nem duplázódnak.</p>" +
-        "<p><b>Mentés / szinkron</b> – az adatok a készüléken vannak. Windowson (Chrome/Edge) az Adatok oldalon egy <b>mentési mappát</b> állíthatsz be " +
-        "(pl. G:\\Saját meghajtó\\KIADOK a Google Drive for desktop-pal): minden módosítás odakerül, és induláskor az app megnézi, van-e ott újabb mentés. " +
-        "Androidon: Adatok → „Mentés megosztással” → Drive → <b>ugyanabba a mappába</b>; a másik irány: „Betöltés fájlból”.</p>" +
+        "<p><b>Szinkron</b> – Adatok → „Bejelentkezés Google-lel és szinkron bekapcsolása” mindkét eszközön, ugyanazzal a Google fiókkal. " +
+        "Az app egy rejtett, csak neki fenntartott helyre ment a Google Drive-on; módosítás után magától feltölt, indításkor és visszatéréskor letölti az újabbat. " +
+        "A fejlécben a ☁ gomb mutatja az állapotot: zöld = szinkronban, narancs = kattints a bejelentkezéshez (kb. óránként kellhet), piros = hiba. " +
+        "Ha mindkét eszközön módosítottál, mielőtt szinkronizált volna, megkérdezi, melyik maradjon.</p>" +
         "</div></section>";
     U.$("#sugo-szerk", el).onclick = async function () {
         const e = await U.urlap({ cim: "Jegyzetek szerkesztése", szeles: true,

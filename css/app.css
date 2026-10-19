@@ -100,6 +100,13 @@ input:focus, select:focus, textarea:focus, button:focus-visible, [tabindex]:focu
 .mentes-allapot { font-size: 12px; opacity: .85; white-space: nowrap; }
 .mentes-allapot.hiba { color: #ffb4b4; opacity: 1; }
 
+/* Google Drive szinkron gomb a fejlécben */
+#fejlec .szinkron-gomb { background: rgba(255, 255, 255, .14); color: #fff; font-weight: 600; white-space: nowrap; }
+#fejlec .szinkron-gomb.sz-ok { background: #1f8a4c; color: #fff; }
+#fejlec .szinkron-gomb.sz-bejelentkezes { background: var(--narancs); color: #1b1b1b; }
+#fejlec .szinkron-gomb.sz-hiba { background: #e53935; color: #fff; }
+#fejlec .szinkron-gomb.sz-ki { opacity: .8; }
+
 .figyelmeztetes-sav {
     display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
     background: var(--figy-hatter); color: var(--figy);

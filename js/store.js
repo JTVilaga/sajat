@@ -8,8 +8,6 @@
 const S = {
     adat: null,
     figyelok: [],
-    mappa: null,            // automatikus mentési mappa (csak asztali Chrome/Edge)
-    fajlEngedely: false,
     szefKulcs: null,        // feloldott széf kulcsa (csak memóriában)
     szefSzoveg: null        // feloldott széf tartalma (csak memóriában)
 };
@@ -75,10 +73,8 @@ S.betolt = function () {
     return S.dbGet("adat").then(function (a) {
         S.adat = a || null;
         if (S.adat) S.normalizal(S.adat);
-        S.dbDel("fajlHandle");   // a régi (1.0-s) egyfájlos beállítás már nem használt
-        return S.dbGet("mappaHandle").catch(function () { return null; });
-    }).then(function (h) {
-        S.mappa = h || null;
+        // a régi (1.0 / 2.0) fájlos-mappás mentés beállításai már nem kellenek
+        S.dbDel("fajlHandle"); S.dbDel("mappaHandle");
         // Tartós tárolás kérése, hogy a böngésző ne törölje az adatokat
         if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
         return S.adat;
@@ -111,12 +107,16 @@ S.modosit = function (fn, opciok) {
     const elotte = JSON.stringify(S.adat);
     fn(S.adat);
     S.adat.modositva = U.most();
+    S.adat.verzio = S.ujId("v");   // egyedi verziójel – a szinkron ezzel hasonlít (a másodperc nem elég pontos)
     S.mentes();
+    D.modositasUtan();      // Google Drive szinkron (ha be van kapcsolva)
     if (!opciok.csendes) S.figyelok.forEach(function (f) { f(); });
     return function visszavon() {
         S.adat = JSON.parse(elotte);
         S.adat.modositva = U.most();
+        S.adat.verzio = S.ujId("v");
         S.mentes();
+        D.modositasUtan();
         S.figyelok.forEach(function (f) { f(); });
     };
 };
@@ -124,14 +124,15 @@ S.modosit = function (fn, opciok) {
 S.mentes = function () {
     S.allapot("mentes");
     S._mentIdb();
-    S._fajlbaIr();
 };
 
-/* Teljes csere (import / betöltés fájlból) */
-S.csere = function (uj) {
+/* Teljes csere (import / betöltés fájlból / letöltés a felhőből) */
+S.csere = function (uj, opciok) {
     S.adat = S.normalizal(uj);
     S.szefKulcs = null; S.szefSzoveg = null;
     S.mentes();
+    // kézi betöltés/import után a felhőbe is felkerül (a szinkron ütközésnél rákérdez)
+    if (!(opciok && opciok.szinkronbol)) D.modositasUtan();
     S.figyelok.forEach(function (f) { f(); });
 };
 
@@ -144,7 +145,7 @@ S.allapot = function (a) {
     const el = document.getElementById("mentes-allapot");
     if (!el) return;
     const szoveg = { mentes: "Mentés…", mentve: "✓ Mentve", hiba: "⚠ Mentési hiba" }[a] || "";
-    el.textContent = szoveg + (S.mappa && S.fajlEngedely && a === "mentve" ? " + mappa" : "");
+    el.textContent = szoveg;
     el.className = "mentes-allapot " + a;
 };
 
@@ -158,87 +159,6 @@ S.jsonEllenoriz = function (obj) {
         throw new Error("Ez nem KIADOK mentési fájl.");
     }
     return S.normalizal(obj);
-};
-
-/* ---------- Automatikus mentés egy MAPPÁBA (File System Access API) ----------
-   Windowson (Chrome/Edge) egy mappát választasz, pl. a Google Drive for desktop
-   meghajtóján (G:\Saját meghajtó\KIADOK). Az app:
-   - minden módosítás után kiírja a mappába a kiadok-adatok.json fájlt,
-   - indításkor és visszatéréskor megnézi, van-e a mappában ÚJABB mentés
-     (pl. a telefonról megosztott kiadok-adatok_ÉÉÉÉ-HH-NN.txt), és felajánlja. */
-S.MENTES_NEV = "kiadok-adatok.json";
-S.MENTES_MINTA = /^kiadok-adatok.*\.(json|txt)$/i;   // ezeket a fájlokat nézi meg a mappában
-
-S.mappaApiVan = function () { return "showDirectoryPicker" in window; };
-
-S.mappaBeallit = async function () {
-    const h = await window.showDirectoryPicker({ id: "kiadok-mentes", mode: "readwrite" });
-    S.mappa = h; S.fajlEngedely = true;
-    await S.dbSet("mappaHandle", h);
-    return h;
-};
-
-S.mappaLeallit = async function () {
-    S.mappa = null; S.fajlEngedely = false;
-    await S.dbDel("mappaHandle");
-};
-
-/* Indításkor: megvan-e még az engedély? Ha nem, kattintás kell hozzá. */
-S.fajlEngedelyEllenoriz = async function () {
-    if (!S.mappa || !S.mappa.queryPermission) return false;
-    try {
-        const p = await S.mappa.queryPermission({ mode: "readwrite" });
-        S.fajlEngedely = p === "granted";
-    } catch (e) { S.fajlEngedely = false; }
-    return S.fajlEngedely;
-};
-S.fajlEngedelyKer = async function () {
-    if (!S.mappa) return false;
-    const p = await S.mappa.requestPermission({ mode: "readwrite" });
-    S.fajlEngedely = p === "granted";
-    return S.fajlEngedely;
-};
-
-S._fajlbaIrMost = async function () {
-    if (!S.mappa || !S.fajlEngedely || !S.adat) return;
-    try {
-        const fh = await S.mappa.getFileHandle(S.MENTES_NEV, { create: true });
-        const w = await fh.createWritable();
-        await w.write(S.exportJson());
-        await w.close();
-        await S.dbSet("utolsoFajlMentes", U.most());
-    } catch (e) {
-        console.error(e);
-        S.fajlEngedely = false;
-        U.toast("Nem sikerült a mappába menteni: " + e.message);
-    }
-};
-S._fajlbaIr = U.debounce(function () { S._fajlbaIrMost(); }, 1500);
-
-/* A mappában lévő mentések közül a legújabb, ha újabb az itteninél.
-   Visszaad: { obj, nev } vagy null */
-S.mappabolUjabb = async function () {
-    if (!S.mappa || !S.fajlEngedely || !S.adat) return null;
-    const jeloltek = [];
-    try {
-        for await (const [nev, h] of S.mappa.entries()) {
-            if (h.kind !== "file" || !S.MENTES_MINTA.test(nev)) continue;
-            const f = await h.getFile();
-            jeloltek.push({ nev: nev, f: f });
-        }
-    } catch (e) { console.warn("Mappa olvasás:", e); return null; }
-
-    // a legutóbb módosult fájlokat nézzük meg (max. 10), a tartalmuk dönt
-    jeloltek.sort(function (a, b) { return b.f.lastModified - a.f.lastModified; });
-    let legjobb = null;
-    for (const j of jeloltek.slice(0, 10)) {
-        try {
-            const obj = S.jsonEllenoriz(JSON.parse(await j.f.text()));
-            if (obj.modositva && (!legjobb || obj.modositva > legjobb.obj.modositva)) legjobb = { obj: obj, nev: j.nev };
-        } catch (e) { /* nem KIADOK mentés vagy sérült – kihagyjuk */ }
-    }
-    if (legjobb && legjobb.obj.modositva > S.adat.modositva) return legjobb;
-    return null;
 };
 
 /* ---------- Széf titkosítás ---------- */

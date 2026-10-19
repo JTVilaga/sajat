@@ -63,20 +63,24 @@ majd a böngészőben: http://localhost:8000
 2. Telepítés: Windowson a címsor telepítés ikonja, Androidon ⋮ → „Alkalmazás telepítése”.
 3. Széf → „Jelszavas védelem” – javasolt bekapcsolni.
 
-## Szinkron Windows ↔ Android
+## Szinkron Windows ↔ Android (Google Drive)
 
-Az adatok mindegyik eszközön helyben vannak. A közös pont egy Google Drive mappa (pl. `KIADOK`).
+Az app közvetlenül a Google Drive API-val szinkronizál (`js/drive-sync.js`), fájlkezelő és
+Google Drive for desktop nélkül. Egyetlen fájl van: `kiadok-adatok.json` a Drive rejtett
+**appDataFolder** helyén – csak ez az app látja, a Drive felületén nem jelenik meg.
 
-- **Windows (Chrome/Edge):** telepítsd a *Google Drive for desktop* programot (így lesz `G:\Saját meghajtó`).
-  Adatok → „Mentési mappa kiválasztása…” → `G:\Saját meghajtó\KIADOK`. Ezután az app minden módosítás után
-  ide írja a `kiadok-adatok.json` fájlt, és induláskor (meg amikor visszatérsz az ablakba) megnézi, van-e a
-  mappában újabb mentés – pl. a telefonról érkezett `kiadok-adatok_ÉÉÉÉ-HH-NN.txt` –, és felajánlja a betöltését.
-- **Android:** Adatok → „Mentés megosztással” → Drive → a `KIADOK` mappa (`.txt` néven, mert az Android .json-t
-  nem enged megosztani – a tartalom ugyanaz). A másik irány: „Betöltés fájlból…” → Drive → `KIADOK` → `kiadok-adatok.json`.
+- Bekapcsolás: Adatok → „Bejelentkezés Google-lel és szinkron bekapcsolása” (mindkét eszközön).
+  Új, üres eszközön az üdvözlő képernyőn: „☁ Google Drive-ról (szinkron)”.
+- Módosítás után ~2,5 mp-cel feltölt; indításkor és amikor visszatérsz az apphoz, letölti az újabbat.
+- Ha mindkét eszközön változott valami szinkron előtt, megkérdezi, melyik maradjon.
+- A fejléc ☁ gombja: zöld = szinkronban (utolsó idő), narancs = bejelentkezés kell
+  (a Google hozzáférés kb. 1 óráig érvényes), piros = hiba.
+- Google Cloud projekt: KIADOK, OAuth Web client, engedélyezett origin: `https://jtvilaga.github.io`,
+  jogosultság: `drive.appdata`. A Client ID a `js/drive-sync.js` elején van (nem titkos).
 
-A betöltés mindig megmutatja, melyik adat az újabb, és szól, ha régebbit töltenél be.
+A kézi mentés (.json letöltés / megosztás / betöltés) biztonsági pillanatképnek megmaradt.
 
 ## Módosításkor
 
 Ha bármelyik fájlt módosítod, az `sw.js`-ben emeld a `CACHE_NAME` verzióját
-(pl. `kiadok-cache-v2` → `v3`), különben a telepített app a régi fájlokat használja.
+(pl. `kiadok-cache-v3` → `v4`), különben a telepített app a régi fájlokat használja.
