@@ -14,6 +14,7 @@
     --halvany: #5d6b7c;
     --vonal: #dde3ea;
     --sor-hover: #f5f8fc;
+    --gomb-masod: #e9edf2;          /* másodlagos gomb háttere */
     --siker: #1f8a4c;
     --siker-hatter: #e3f5ea;
     --veszely: #c62828;
@@ -40,6 +41,7 @@
         --halvany: #95a3b4;
         --vonal: #2a3542;
         --sor-hover: #1e2834;
+        --gomb-masod: #243040;
         --siker: #4cc782;
         --siker-hatter: #173525;
         --veszely: #ff6b6b;
@@ -204,8 +206,9 @@ main:focus { outline: none; }
 .btn:hover { filter: brightness(.96); }
 .btn:disabled { opacity: .4; cursor: default; }
 .btn-elsodleges { background: var(--kek-2); color: #fff; }
-.btn-masodlagos { background: transparent; border-color: var(--vonal); color: var(--szoveg); }
-.btn-masodlagos:hover { background: var(--sor-hover); }
+.btn-masodlagos { background: var(--gomb-masod); border-color: var(--vonal); color: var(--szoveg); }
+/* egér fölötte (asztali) és megnyomás közben (mobilon ez a visszajelzés) */
+.btn-masodlagos:hover, .btn-masodlagos:active { background: var(--kek-halvany); border-color: var(--kek-2); color: var(--kek-2); }
 .btn-veszely { background: var(--veszely-hatter); color: var(--veszely); }
 .btn-siker { background: var(--siker-hatter); color: var(--siker); }
 .btn-vilagos { background: rgba(255, 255, 255, .15); color: #fff; }
