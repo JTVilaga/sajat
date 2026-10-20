@@ -12,9 +12,17 @@ const Q = {};
 Q.android = /Android/i.test(navigator.userAgent);
 Q.eszkoz = Q.android ? "Telefon" : "PC";
 
-/* Van-e még el nem küldött módosítás? (a ⇄ gomb pöttyéhez) */
+/* Fel van-e töltve a mostani állapot a Google Drive-ra (ha a Drive szinkron be van kapcsolva)? */
+Q.felhobenVan = function () {
+    return !!(S.adat && D.beallitas.be && D.beallitas.alap === (S.adat.verzio || S.adat.modositva));
+};
+
+/* Van-e még el nem küldött módosítás? (a ⇄ gomb pöttyéhez)
+   Nem számít el nem küldöttnek, ha Quick Share-rel elküldted, innen fogadtad,
+   vagy a Google Drive szinkron már feltöltötte. */
 Q.kuldetlen = async function () {
     if (!S.adat) return false;
+    if (Q.felhobenVan()) return false;
     const k = await S.dbGet("kuldottVerzio").catch(function () { return null; });
     const f = await S.dbGet("fogadottVerzio").catch(function () { return null; });
     const v = S.adat.verzio || S.adat.modositva;
@@ -131,6 +139,21 @@ Q.fogad = async function () {
     U.toast("Adatok betöltve" + (kuld ? " (" + kuld.eszkoz + ", " + U.idopontHu(kuld.ido) + ")" : "") + ".");
 };
 
+/* Az ablak állapotsora: Quick Share és (ha be van kapcsolva) a Google Drive szinkron szerint */
+Q.allapotSzoveg = function (van) {
+    const utolso = U.idopontHu(S.adat.modositva);
+    if (Q.felhobenVan()) {
+        return "<p class='rendben-sav'>✓ A mostani állapot fent van a Google Drive-on (szinkron: " + U.idopontHu(D.utolso) +
+            "). A másik eszköz induláskor magától letölti, küldeni nem kell.</p>";
+    }
+    if (!van) return "";
+    if (D.beallitas.be) {
+        return "<p class='figyelmeztetes'>Van olyan módosítás (utolsó: " + utolso + "), ami még nem került fel a Google Drive-ra, " +
+            "és Quick Share-rel sem küldted el. Kattints a fejléc ☁ gombjára, vagy küldd el innen.</p>";
+    }
+    return "<p class='figyelmeztetes'>Ezen az eszközön van el nem küldött módosítás (utolsó: " + utolso + ").</p>";
+};
+
 /* ---------- A ⇄ gomb ablaka ---------- */
 Q.ablak = async function () {
     const uk = await S.dbGet("utolsoKuldes").catch(function () { return null; });
@@ -142,7 +165,7 @@ Q.ablak = async function () {
         html:
             "<p class='modal-szoveg'>Quick Share-rel (Bluetooth / WiFi), szerver és internet nélkül. " +
             "Amelyik eszközön utoljára szerkesztettél, onnan <b>küldj</b>; a másikon <b>fogadj</b>.</p>" +
-            (van ? "<p class='figyelmeztetes'>Ezen az eszközön van el nem küldött módosítás (utolsó: " + U.idopontHu(S.adat.modositva) + ").</p>" : "") +
+            Q.allapotSzoveg(van) +
             "<div class='kuldes-gombok'>" +
             "<button class='btn btn-elsodleges btn-nagy' id='q-kuld'>📤 Küldés a " + masik + "</button>" +
             "<button class='btn btn-masodlagos btn-nagy' id='q-fogad'>📥 Fogadás</button>" +

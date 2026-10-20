@@ -106,6 +106,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible, [tabindex]:focu
     content: ""; position: absolute; top: -3px; right: -3px; width: 11px; height: 11px;
     border-radius: 50%; background: var(--narancs); border: 2px solid var(--kek);
 }
+.rendben-sav { background: var(--siker-hatter); color: var(--siker); padding: 8px 12px; border-radius: 8px; font-size: 14px; margin: 0 0 6px; }
 .kuldes-gombok { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
 .btn-nagy { min-height: 64px; font-size: 16px; white-space: normal; }
 .kod-sor { font-family: Consolas, ui-monospace, monospace; background: var(--hatter); padding: 8px 10px; border-radius: 8px; overflow-wrap: anywhere; }

@@ -302,6 +302,7 @@ D.allapot = function (kod, uzenet) {
         offline: "Nincs internet – a módosítások itt megmaradnak, és később feltöltődnek"
     }[kod];
     if (A.aktualis === "adatok" && !U.modalNyitva() && kod !== "folyamatban") A.frissit();
+    if (kod === "ok" || kod === "ki") Q.gombFrissit();   // a ⇄ gomb pöttye a Drive szinkront is figyelembe veszi
 };
 
 /* ---------- Indítás ---------- */
