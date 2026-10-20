@@ -180,7 +180,7 @@ N.napHtml = function (datum, opciok) {
                 : "<span class='cimke " + (datum < ma ? "cimke-hiba" : "cimke-figy") + "'>" + (datum < ma ? "lejárt" : "fizetendő") + "</span>";
             h += "<li class='tetel tetel-kiadas' data-kiadas='" + k.id + "' tabindex='0'>" +
                 "<span class='tetel-szoveg'><b>" + U.esc(k.nev || k.kat) + "</b> <span class='halvany'>" + U.esc(k.kat) + "</span><br>" +
-                U.ft(k.osszeg) + " " + allapot + "</span>" +
+                "<b>" + U.ft(k.osszeg) + "</b> " + allapot + "</span>" +
                 (k.fiz ? "" : "<button class='btn btn-kicsi btn-siker' data-fizet='" + k.id + "'>Fizetve ma</button>") +
                 "</li>";
         });
