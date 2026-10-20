@@ -308,6 +308,7 @@ main:focus { outline: none; }
 .tetel-jel { color: var(--narancs); }
 .tetel-szoveg { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .napi-megj { padding: 9px 10px; border-left: 3px solid var(--narancs); background: var(--hatter); border-radius: 0 8px 8px 0; cursor: pointer; }
+.jegyzet-szoveg { max-height: 320px; overflow-y: auto; border-left-color: var(--kek-2); }
 #nt-nap-panel .gomb-sor, .naplo-reszlet .gomb-sor { margin-top: 12px; }
 .kartya-fej h3::first-letter { text-transform: uppercase; }
 

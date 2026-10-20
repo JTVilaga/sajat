@@ -20,7 +20,8 @@ S.URES_ADAT = function () {
             { id: S.ujId("o"), nev: "Gáz", egyseg: "m³", leolvasasok: [] },
             { id: S.ujId("o"), nev: "Villany", egyseg: "kWh", leolvasasok: [] }
         ],
-        auto: [], sablonok: [], szef: { titkos: false, szoveg: "" }, sugo: ""
+        auto: [], sablonok: [], szef: { titkos: false, szoveg: "" }, sugo: "",
+        jegyzet: ""          // általános, dátumtól független jegyzet (naptár oldalsáv)
     };
 };
 

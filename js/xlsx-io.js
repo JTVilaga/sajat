@@ -192,6 +192,7 @@ X.exportal = async function () {
         lapHozzaad("HF", [["A széf titkosítva és zárolva van, ezért nem került az exportba."]], [], [80]);
     }
     lapHozzaad("HELP", (a.sugo || "").split("\n").map(function (s) { return [s]; }), [], [120]);
+    if (a.jegyzet) lapHozzaad("Jegyzet", a.jegyzet.split("\n").map(function (s) { return [s]; }), [], [120]);
 
     XLSX.writeFile(wb, "S_KIADOK_export_" + U.ma() + ".xlsx");
 };

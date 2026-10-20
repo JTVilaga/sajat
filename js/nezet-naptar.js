@@ -80,6 +80,7 @@ NaptarNezet.render = function (el) {
         "</section>" +
         "<div class='naptar-oldal'>" +
         "<section class='kartya' id='nt-nap-panel'></section>" +
+        "<section class='kartya' id='nt-jegyzet'>" + NaptarNezet.jegyzetHtml() + "</section>" +
         "<section class='kartya'>" +
         "<div class='kartya-fej'><h3>Közelgő 30 nap</h3><span class='halvany kicsi'>+ lejárt, fizetetlen</span></div>" +
         kozelHtml +
@@ -91,6 +92,10 @@ NaptarNezet.render = function (el) {
     U.$("#nt-kov", el).onclick = function () { NaptarNezet.lapoz(1); };
     U.$("#nt-ma", el).onclick = function () { NaptarNezet.ugras(U.ma()); };
     NaptarNezet.napPanel();
+    U.$("#nt-jegyzet", el).onclick = function (ev) {
+        if (ev.target.closest("a")) return;           // a jegyzetben lévő linkre kattintva ne szerkesszen
+        if (ev.target.closest("[data-jegyzet]")) NaptarNezet.jegyzetSzerkeszt();
+    };
 
     U.$$(".kozelgo-lista li", el).forEach(function (li) {
         li.onclick = function () { NaptarNezet.ugras(li.dataset.ugras, true); };
@@ -153,6 +158,24 @@ NaptarNezet.napPanel = function () {
     const mara = U.$("#nt-mara", p);
     if (mara) mara.onclick = function () { NaptarNezet.ugras(U.ma()); };
     N.napKezelo(U.$("#nt-nap-tartalom", p), k);
+};
+
+/* Általános jegyzet – dátumtól független, a napi megjegyzéshez hasonlóan */
+NaptarNezet.jegyzetHtml = function () {
+    const j = S.adat.jegyzet || "";
+    return "<div class='kartya-fej'><h3>Jegyzet</h3>" +
+        "<button class='btn btn-kicsi btn-masodlagos' data-jegyzet='1'>" + (j ? "Szerkesztés" : "+ Jegyzet") + "</button></div>" +
+        (j ? "<div class='napi-megj jegyzet-szoveg' data-jegyzet='1' tabindex='0'>" + U.linkesit(j) + "</div>"
+           : "<p class='ures-uzenet'>Nincs jegyzet.</p>");
+};
+
+NaptarNezet.jegyzetSzerkeszt = async function () {
+    const e = await U.urlap({
+        cim: "Jegyzet",
+        mezok: [{ nev: "jegyzet", felirat: "Általános jegyzet (nem tartozik naphoz)", tipus: "textarea", ertek: S.adat.jegyzet, sorok: 10 }]
+    });
+    if (!e) return;
+    S.modosit(function (a) { a.jegyzet = e.jegyzet; });
 };
 
 NaptarNezet.lapoz = function (n) {
